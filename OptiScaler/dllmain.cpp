@@ -1977,9 +1977,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             spdlog::info("");
             State::Instance().isRunningOnNvidia = isNvidia();
 
-            if (State::Instance().isRunningOnNvidia)
+            // Opt-in: let the DLSS backend load a DLSS (NGX) library that runs on other GPUs
+            const bool forceDlss = Config::Instance()->DLSSForceEnabled.value_or_default();
+
+            if (State::Instance().isRunningOnNvidia || forceDlss)
             {
-                spdlog::info("Running on Nvidia");
+                if (State::Instance().isRunningOnNvidia)
+                    spdlog::info("Running on Nvidia");
+                else
+                    spdlog::info("DLSS.ForceEnabled is set, not requiring an Nvidia GPU");
 
                 if (!State::Instance().NVNGX_DLSS_Path.has_value() &&
                     Config::Instance()->NVNGX_DLSS_Library.has_value())
@@ -2020,7 +2026,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                     Config::Instance()->DLSSEnabled.set_volatile_value(false);
                 }
 
-                if (!Config::Instance()->DxgiSpoofing.has_value())
+                // On a forced non-Nvidia GPU the game has to be shown an Nvidia one
+                if (State::Instance().isRunningOnNvidia && !Config::Instance()->DxgiSpoofing.has_value())
                 {
                     spdlog::info("Disabling DxgiSpoofing");
                     Config::Instance()->DxgiSpoofing.set_volatile_value(false);

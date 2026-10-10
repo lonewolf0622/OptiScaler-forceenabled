@@ -1,0 +1,24 @@
+name: Build (0.9.4 ForceEnabled)
+
+on:
+  push:
+    branches: [ "v094-forceenabled-ci" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: "true"
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v3
+    - name: Build
+      run: msbuild /m /p:Configuration=Release . /verbosity:minimal
+    - uses: actions/upload-artifact@v7.0.0
+      with:
+        name: OptiScaler-0.9.4-forceenabled
+        path: |
+          **/OptiScaler.dll
+          OptiScaler.ini
